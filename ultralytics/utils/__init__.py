@@ -40,7 +40,7 @@ NUM_THREADS = min(8, max(1, os.cpu_count() - 1))  # number of YOLO multiprocessi
 AUTOINSTALL = str(os.getenv("YOLO_AUTOINSTALL", True)).lower() == "true"  # global auto-install mode
 VERBOSE = str(os.getenv("YOLO_VERBOSE", True)).lower() == "true"  # global verbose mode
 TQDM_BAR_FORMAT = "{l_bar}{bar:10}{r_bar}" if VERBOSE else None  # tqdm bar format
-LOGGING_NAME = "ultralytics"
+LOGGING_NAME = "operation_logger"
 MACOS, LINUX, WINDOWS = (platform.system() == x for x in ["Darwin", "Linux", "Windows"])  # environment booleans
 ARM64 = platform.machine() in {"arm64", "aarch64"}  # ARM64 booleans
 PYTHON_VERSION = platform.python_version()
@@ -509,6 +509,7 @@ def is_online() -> bool:
     Returns:
         (bool): True if connection is successful, False otherwise.
     """
+    return False
     with contextlib.suppress(Exception):
         assert str(os.getenv("YOLO_OFFLINE", "")).lower() != "true"  # check if ENV var YOLO_OFFLINE="True"
         import socket
