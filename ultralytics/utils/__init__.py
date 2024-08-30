@@ -322,7 +322,7 @@ def plt_settings(rcparams=None, backend="Agg"):
     return decorator
 
 
-def set_logging(name="LOGGING_NAME", verbose=True):
+def set_logging(name="operation_logger", verbose=True):
     """
     Sets up logging with UTF-8 encoding and configurable verbosity.
 
