@@ -183,11 +183,11 @@ class BaseTrainer:
         if world_size > 1 and "LOCAL_RANK" not in os.environ:
             # Argument checks
             if self.args.rect:
-                LOGGER.warning("____TRAINING____WARNING ⚠️ 'rect=True' is incompatible with Multi-GPU training, setting 'rect=False'")
+                LOGGER.warning("WARNING ⚠️ 'rect=True' is incompatible with Multi-GPU training, setting 'rect=False'")
                 self.args.rect = False
             if self.args.batch < 1.0:
                 LOGGER.warning(
-                    "____TRAINING____WARNING ⚠️ 'batch<1' for AutoBatch is incompatible with Multi-GPU training, setting "
+                    "WARNING ⚠️ 'batch<1' for AutoBatch is incompatible with Multi-GPU training, setting "
                     "default 'batch=16'"
                 )
                 self.args.batch = 16
@@ -195,7 +195,7 @@ class BaseTrainer:
             # Command
             cmd, file = generate_ddp_command(world_size, self)
             try:
-                LOGGER.info(f'____TRAINING____{colorstr("DDP:")} debug command {" ".join(cmd)}')
+                LOGGER.info(f'{colorstr("DDP:")} debug command {" ".join(cmd)}')
                 subprocess.run(cmd, check=True)
             except Exception as e:
                 raise e
@@ -247,11 +247,11 @@ class BaseTrainer:
         for k, v in self.model.named_parameters():
             # v.register_hook(lambda x: torch.nan_to_num(x))  # NaN to 0 (commented for erratic training results)
             if any(x in k for x in freeze_layer_names):
-                LOGGER.info(f"____TRAINING____Freezing layer '{k}'")
+                LOGGER.info(f"Freezing layer '{k}'")
                 v.requires_grad = False
             elif not v.requires_grad and v.dtype.is_floating_point:  # only floating point Tensor can require gradients
                 LOGGER.info(
-                    f"____TRAINING____WARNING ⚠️ setting 'requires_grad=True' for frozen layer '{k}'. "
+                    f"WARNING ⚠️ setting 'requires_grad=True' for frozen layer '{k}'. "
                     "See ultralytics.engine.trainer for customization of frozen layers."
                 )
                 v.requires_grad = True
@@ -331,7 +331,7 @@ class BaseTrainer:
         self.train_time_start = time.time()
         self.run_callbacks("on_train_start")
         LOGGER.info(
-            f'____TRAINING____Image sizes {self.args.imgsz} train, {self.args.imgsz} val\n'
+            f'Image sizes {self.args.imgsz} train, {self.args.imgsz} val\n'
             f'Using {self.train_loader.num_workers * (world_size or 1)} dataloader workers\n'
             f"Logging results to {colorstr('bold', self.save_dir)}\n"
             f'Starting training for ' + (f"{self.args.time} hours..." if self.args.time else f"{self.epochs} epochs...")
@@ -358,7 +358,7 @@ class BaseTrainer:
                 self.train_loader.reset()
 
             if RANK in {-1, 0}:
-                LOGGER.info(f"____TRAINING____{self.progress_string()}")
+                LOGGER.info(f"{self.progress_string()}")
                 pbar = TQDM(enumerate(self.train_loader), total=nb)
             self.tloss = None
             for i, batch in pbar:
@@ -464,7 +464,7 @@ class BaseTrainer:
         if RANK in {-1, 0}:
             # Do final val with best.pt
             LOGGER.info(
-                f"____TRAINING____\n{epoch - self.start_epoch + 1} epochs completed in "
+                f"\n{epoch - self.start_epoch + 1} epochs completed in "
                 f"{(time.time() - self.train_time_start) / 3600:.3f} hours."
             )
             self.final_eval()
@@ -650,7 +650,7 @@ class BaseTrainer:
                     if self.last.is_file():  # update best.pt train_metrics from last.pt
                         k = "train_results"
                         torch.save({**torch.load(self.best), **{k: torch.load(self.last)[k]}}, self.best)
-                    LOGGER.info(f"____TRAINING____\nValidating {f}...")
+                    LOGGER.info(f"\nValidating {f}...")
                     self.validator.args.plots = self.args.plots
                     self.metrics = self.validator(model=f)
                     self.metrics.pop("fitness", None)
@@ -699,10 +699,10 @@ class BaseTrainer:
             f"{self.args.model} training to {self.epochs} epochs is finished, nothing to resume.\n"
             f"Start a new training without resuming, i.e. 'yolo train model={self.args.model}'"
         )
-        LOGGER.info(f"____TRAINING____Resuming training {self.args.model} from epoch {start_epoch + 1} to {self.epochs} total epochs")
+        LOGGER.info(f"Resuming training {self.args.model} from epoch {start_epoch + 1} to {self.epochs} total epochs")
         if self.epochs < start_epoch:
             LOGGER.info(
-                f"____TRAINING____{self.model} has been trained for {ckpt['epoch']} epochs. Fine-tuning for {self.epochs} more epochs."
+                f"{self.model} has been trained for {ckpt['epoch']} epochs. Fine-tuning for {self.epochs} more epochs."
             )
             self.epochs += ckpt["epoch"]  # finetune additional epochs
         self.best_fitness = best_fitness
@@ -715,7 +715,7 @@ class BaseTrainer:
         if hasattr(self.train_loader.dataset, "mosaic"):
             self.train_loader.dataset.mosaic = False
         if hasattr(self.train_loader.dataset, "close_mosaic"):
-            LOGGER.info("____TRAINING____Closing dataloader mosaic")
+            LOGGER.info("Closing dataloader mosaic")
             self.train_loader.dataset.close_mosaic(hyp=self.args)
 
     def build_optimizer(self, model, name="auto", lr=0.001, momentum=0.9, decay=1e-5, iterations=1e5):
@@ -740,7 +740,7 @@ class BaseTrainer:
         bn = tuple(v for k, v in nn.__dict__.items() if "Norm" in k)  # normalization layers, i.e. BatchNorm2d()
         if name == "auto":
             LOGGER.info(
-                f"____TRAINING____{colorstr('optimizer:')} 'optimizer=auto' found, "
+                f"{colorstr('optimizer:')} 'optimizer=auto' found, "
                 f"ignoring 'lr0={self.args.lr0}' and 'momentum={self.args.momentum}' and "
                 f"determining best 'optimizer', 'lr0' and 'momentum' automatically... "
             )
@@ -775,7 +775,7 @@ class BaseTrainer:
         optimizer.add_param_group({"params": g[0], "weight_decay": decay})  # add g0 with weight_decay
         optimizer.add_param_group({"params": g[1], "weight_decay": 0.0})  # add g1 (BatchNorm2d weights)
         LOGGER.info(
-            f"____TRAINING____{colorstr('optimizer:')} {type(optimizer).__name__}(lr={lr}, momentum={momentum}) with parameter groups "
+            f"{colorstr('optimizer:')} {type(optimizer).__name__}(lr={lr}, momentum={momentum}) with parameter groups "
             f'{len(g[1])} weight(decay=0.0), {len(g[0])} weight(decay={decay}), {len(g[2])} bias(decay=0.0)'
         )
         return optimizer
